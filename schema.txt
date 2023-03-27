@@ -9,5 +9,5 @@ ArticleViews(articleID, userID, viewDate)
 here
 - In Comments, articleID references Articles and userID references Users
 - In ArticleTags, articleID references Articles and tagID references Tags
-- In ArticleCategories, catID references Categories and articleID references Articl
+- In ArticleCategories, catID references Categories and articleID references Articles
 - In ArticleViews, articleID references Articles and userID references Users
