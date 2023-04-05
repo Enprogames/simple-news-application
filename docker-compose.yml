@@ -1,0 +1,47 @@
+# Documentation: https://container-registry.oracle.com/ords/f?p=113:4:9759506446693:::4:P4_REPOSITORY,AI_REPOSITORY,AI_REPOSITORY_NAME,P4_REPOSITORY_NAME,P4_EULA_ID,P4_BUSINESS_AREA_ID:803,803,Oracle%20Database%20Express%20Edition,Oracle%20Database%20Express%20Edition,1,0&cs=3rz7DKbpTnJuQY-Mn2ce-uOu8P_5zQO-nFfZh44d60WWdA2zMYAISNGEAA0IfpLHcE4eKZRnc9M_h33GvOGsmpQ
+#wnameless: https://hub.docker.com/r/wnameless/oracle-xe-11g-r2
+#
+### Connecting:
+# 1. docker-compose exec oracleex_db_370 bash
+# 2. rlwrap sqlplus system/oracle@XE
+# password: oracle
+
+### Using the database with python:
+# 1. docker-compose exec python_backend bash
+# 2. python3 insert_table_data.py
+# OR:
+# docker-compose exec python_backend python3 insert_table_data.py
+# 
+# Now, within the oracle_test_db_express image, we can use the hardware store database.
+
+# I can't get this working:
+# docker-compose exec -it oracle_test_db_ex sqlplus system/oracle@XE as sysdba
+
+version: '3.8'
+
+services: 
+  python_app_370:
+    container_name: python_app_370
+    build:
+      context: .
+      dockerfile: Dockerfile.oracle_linux
+    command: tail -f /dev/null
+    volumes:
+    - .:/home
+    depends_on:
+    - oracleex_db_370
+
+  oracleex_db_370:
+    build:
+      context: .
+      dockerfile: Dockerfile.oraclexe
+    container_name: oracleex_db_370
+    ports:
+      - 1521:1521
+      - 5500:5500
+    volumes:
+      - /d/oracle_test/test2:/opt/oracle/oradata
+      - .:/home
+    environment:
+      - DB_USER=${DB_USER}
+      - ORACLE_PWD=${DB_PASS}

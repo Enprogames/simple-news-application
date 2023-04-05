@@ -1,0 +1,10 @@
+FROM pengbai/docker-oracle-xe-11g-r2
+
+WORKDIR /home
+
+RUN apt-get update && apt-get install -y rlwrap tree
+
+RUN alias rlsqlplus='rlwrap sqlplus'
+RUN alias rlrman='rlwrap rman'
+
+COPY ./create_data.sql /entrypoint-initdb.d/

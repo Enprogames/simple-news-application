@@ -1,0 +1,62 @@
+FROM ghcr.io/oracle/oraclelinux8-instantclient:21
+
+# RUN  microdnf install oracle-instantclient-release-el8 && \
+#      microdnf install oracle-instantclient-basic oracle-instantclient-devel oracle-instantclient-sqlplus && \
+#      microdnf clean all
+
+WORKDIR /home
+COPY ./requirements.txt /home
+
+# install packages for installing other packages
+RUN yum update -y && yum install -y wget \
+                                    yum-utils \
+                                    openssl-devel \
+                                    bzip2-devel \
+                                    libffi-devel \
+                                    xz-devel \
+                                    gzip \
+                                    unzip \
+                                    sqlite-devel \
+                                    which \
+                                    curl \
+                                    nmap \
+                                    nc \
+                                    iputils \
+                                    telnet \
+                                    git \
+                                    vim \
+                                    nano \
+                                    tmux && \
+    yum groupinstall -y "Development Tools"
+
+RUN yum install -y gcc
+
+# install Python 3.9.2
+RUN cd /opt
+RUN wget https://www.python.org/ftp/python/3.9.2/Python-3.9.2.tgz
+RUN tar -xzf Python-3.9.2.tgz && \
+    cd Python-3.9.2 && \
+    ./configure --prefix=/opt/python39 --enable-optimizations --with-system-ffi --with-computed-gotos --enable-loadable-sqlite-extensions && \
+    make -j "$(nproc)" && \
+    make install && \
+    cd /home
+RUN update-alternatives --install /usr/bin/python3 python3 /opt/python39/bin/python3.9 1 && \
+    update-alternatives --install /usr/bin/python3-config python3-config /opt/python39/bin/python3.9-config 1 && \
+    update-alternatives --install /usr/bin/pip3 pip3 /opt/python39/bin/pip3.9 1
+
+# update pip and install all python requirements
+RUN python3 -m pip install --user --upgrade pip && \
+    python3 -m pip install --user wheel && \
+    python3 -m pip install --user -r requirements.txt && \
+    python3 -m pip install --user ipython && \
+    python3 -m pip install --user ipykernel
+
+# install VS Code (code-server)
+RUN curl -fsSL https://code-server.dev/install.sh | sh
+
+# install VS Code extensions
+RUN code-server --install-extension redhat.vscode-yaml \
+                --install-extension redhat.vscode-xml \
+                --install-extension ms-python.python \
+                --install-extension ms-toolsai.jupyter \
+                --install-extension Oracle.oracledevtools
