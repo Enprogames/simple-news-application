@@ -1,0 +1,4 @@
+oracledb
+pyjson5
+python-dotenv
+rich

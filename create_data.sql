@@ -15,14 +15,14 @@
 -- In ArticleTags, articleID references Articles and tagID references Tags
 -- In ArticleViews, articleID references Articles and userID references Users
 
--- drop table ArticleViews
--- drop table ArticleTags
--- drop table Tags
--- drop table Categories
--- drop table Comments
--- drop table Articles
--- drop table Users
--- drop table UserRoles
+-- drop table ArticleViews;
+-- drop table ArticleTags;
+-- drop table Tags;
+-- drop table Categories;
+-- drop table Comments;
+-- drop table Articles;
+-- drop table Users;
+-- drop table UserRoles;
 
 -- For this project, this will likely consist soley of "user" and "admin". 
 -- The "admin" role will be able to view reports for what articles/tags/users/categories are most popular/active
@@ -30,14 +30,13 @@
 create table UserRoles (
     roleName varchar(255) primary key,
     description varchar(1500)
-)
+);
 
--- Create user with support for sha512 hashed password
 -- TODO: Add support for user email addresses?
 create table Users (
     userID char(36) primary key,
     username varchar(255),
-    password RAW(512),
+    password varchar(512),
     registerDate date,
     roleName varchar(255) references UserRoles
 );
@@ -48,7 +47,7 @@ create table Articles (
     title varchar(255),
     author char(36),
     publishDate date,
-    content text
+    content clob
 );
 
 -- Comments on articles
@@ -56,9 +55,9 @@ create table Articles (
 create table Comments (
     commentID char(36) primary key,
     articleID char(36) references Articles,
-    userID char(36), references Users,
+    userID char(36) references Users,
     commentDate date,
-    content text
+    content clob
 );
 
 -- Article categories
@@ -89,3 +88,14 @@ create table ArticleViews(
     userID char(36) references Users,
     viewedAt timestamp
 );
+
+insert into UserRoles (roleName) values ('user');
+insert into UserRoles (roleName) values ('admin');
+
+insert into Users values (0, 'bob', '123', 
+                          to_date('2022-01-01', 'YYYY-MM-DD'), 'user');
+
+insert into Users values (1, 'rick', '123', 
+                          to_date('2022-01-01', 'YYYY-MM-DD'), 'admin');
+
+-- to_timestamp('2022-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
