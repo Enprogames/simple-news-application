@@ -45,7 +45,7 @@ create table Users (
 create table Articles (
     articleID char(36) primary key,
     title varchar(255),
-    author char(36),
+    author char(255),
     publishDate date,
     content clob
 );
@@ -71,7 +71,7 @@ create table Categories (
 create table Tags (
     tagID char(36) primary key,
     tagName varchar(255),
-		catName varchar(255) references Categories
+	catName varchar(255) references Categories
 );
 
 -- Many to many relationship to show which tags are associated with which articles
@@ -83,7 +83,7 @@ create table ArticleTags (
 
 -- Many to many relationship to show which users have viewed which articles,
 -- and at what times
-create table ArticleViews(
+create table ArticleViews (
     articleID char(36) references Articles,
     userID char(36) references Users,
     viewedAt timestamp
@@ -92,10 +92,37 @@ create table ArticleViews(
 insert into UserRoles (roleName) values ('user');
 insert into UserRoles (roleName) values ('admin');
 
-insert into Users values (0, 'bob', '123', 
+insert into Users values (0, 'bob', '123',
                           to_date('2022-01-01', 'YYYY-MM-DD'), 'user');
 
-insert into Users values (1, 'rick', '123', 
-                          to_date('2022-01-01', 'YYYY-MM-DD'), 'admin');
+insert into Users values (1, 'rick', '123',
+                          to_date('2022-01-02', 'YYYY-MM-DD'), 'admin');
 
--- to_timestamp('2022-01-01 00:00:00', 'YYYY-MM-DD HH24:MI:SS')
+insert into Users values (2, 'fred', '123',
+                          to_date('2022-01-03', 'YYYY-MM-DD'), 'user');
+
+insert into Categories values ('technology', 'Articles about technology');
+insert into Categories values ('politics', 'Articles about politics');
+
+insert into Tags values (0, 'database', 'technology');
+insert into Tags values (1, 'quantum computing', 'technology');
+insert into Tags values (2, 'world leaders', 'politics');
+
+
+insert into Articles (articleID, title, author, publishDate, content)
+                    values (0, 'How to make a database', 'Bill Jameson',
+                            to_date('2022-01-01', 'YYYY-MM-DD'),
+                            'First, you need to setup a database instance. Then create your tables. Finally, create an application that does something useful with it.');
+
+insert into Articles values (1, 'President of Venezuela resigns', 'John Smith',
+                            to_date('2022-01-03', 'YYYY-MM-DD'),
+                            'President of Venezuela resigns after 10 years in office.');
+
+insert into Articles values (2, 'Quantum computing breakthrough', 'John Smith',
+                            to_date('2022-01-05', 'YYYY-MM-DD'),
+                            'Quantum computing breakthrough allows for faster calculations.');
+
+
+insert into ArticleTags values (0, 0);
+insert into ArticleTags values (1, 2);
+insert into ArticleTags values (2, 1);
