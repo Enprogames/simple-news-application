@@ -5,7 +5,9 @@
 # 1. docker-compose exec oracleex_db_370 bash
 # 2. rlwrap sqlplus system/oracle@XE
 # password: oracle
-
+#
+# Or, from the Python container: rlwrap sqlplus system/oracle@//oracleex_db_370:1521/XE
+#
 ### Using the database with python:
 # 1. docker-compose exec python_backend bash
 # 2. python3 insert_table_data.py

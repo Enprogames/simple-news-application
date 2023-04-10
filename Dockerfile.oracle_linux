@@ -8,7 +8,9 @@ WORKDIR /home
 COPY ./requirements.txt /home
 
 # install packages for installing other packages
-RUN yum update -y && yum install -y wget \
+RUN yum update -y && yum install -y epel-release \
+                  && yum install -y rlwrap \
+                                    wget \
                                     yum-utils \
                                     openssl-devel \
                                     bzip2-devel \
@@ -26,10 +28,9 @@ RUN yum update -y && yum install -y wget \
                                     git \
                                     vim \
                                     nano \
-                                    tmux && \
+                                    tmux \
+                                    gcc && \
     yum groupinstall -y "Development Tools"
-
-RUN yum install -y gcc
 
 # install Python 3.9.2
 RUN cd /opt
@@ -38,11 +39,18 @@ RUN tar -xzf Python-3.9.2.tgz && \
     cd Python-3.9.2 && \
     ./configure --prefix=/opt/python39 --enable-optimizations --with-system-ffi --with-computed-gotos --enable-loadable-sqlite-extensions && \
     make -j "$(nproc)" && \
-    make install && \
+    make altinstall && \
     cd /home
 RUN update-alternatives --install /usr/bin/python3 python3 /opt/python39/bin/python3.9 1 && \
     update-alternatives --install /usr/bin/python3-config python3-config /opt/python39/bin/python3.9-config 1 && \
     update-alternatives --install /usr/bin/pip3 pip3 /opt/python39/bin/pip3.9 1
+
+# Install Conda
+RUN yum install bzip2  # TODO: Move this to the top, where the other packages are installed
+RUN curl -O https://repo.anaconda.com/archive/Anaconda3-2023.03-Linux-x86_64.sh
+RUN bash Anaconda3-2023.03-Linux-x86_64.sh -b -p /opt/conda
+RUN /opt/conda/bin/conda update --all
+# RUN /opt/conda/bin/conda update anaconda
 
 # update pip and install all python requirements
 RUN python3 -m pip install --user --upgrade pip && \
@@ -59,4 +67,17 @@ RUN code-server --install-extension redhat.vscode-yaml \
                 --install-extension redhat.vscode-xml \
                 --install-extension ms-python.python \
                 --install-extension ms-toolsai.jupyter \
-                --install-extension Oracle.oracledevtools
+                --install-extension Oracle.oracledevtools \
+                --install-extension ms-vscode.makefile-tools \
+
+# Setup conda environment
+RUN /opt/conda/bin/conda create -n py9 python=3.9.2 -y
+RUN /opt/conda/bin/conda init bash
+
+# Make RUN commands use the new environment:
+# https://pythonspeed.com/articles/activate-conda-dockerfile/
+RUN echo "export PATH=/opt/conda/bin:$PATH" >> ~/.bashrc
+RUN echo "conda activate py9" >> ~/.bashrc
+SHELL ["/bin/bash", "--login", "-c"]
+RUN /opt/conda/bin/conda install pip -y && \
+    /opt/conda/envs/py9/bin/pip install -r requirements.txt
