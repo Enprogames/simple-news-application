@@ -1,4 +1,5 @@
 oracledb
 pyjson5
+pytest
 python-dotenv
 rich
