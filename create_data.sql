@@ -25,7 +25,7 @@ create table UserRoles (
 
 -- TODO: Add support for user email addresses?
 create table Users (
-    userID char(36) primary key,
+    userID integer primary key,
     username varchar(255),
     password varchar(512),
     registerDate date,
@@ -34,7 +34,7 @@ create table Users (
 
 -- e.g. "How to make a database", "How to make a database in MySQL", "How to make a database in MySQL using SQL"
 create table Articles (
-    articleID char(36) primary key,
+    articleID integer primary key,
     title varchar(255),
     author char(255),
     publishDate date,
@@ -44,9 +44,9 @@ create table Articles (
 -- Comments on articles
 -- e.g. "This is a great article", "I don't agree with you", "I like your article"
 create table Comments (
-    commentID char(36) primary key,
-    articleID char(36) references Articles,
-    userID char(36) references Users,
+    commentID integer primary key,
+    articleID integer references Articles,
+    userID integer references Users,
     commentDate date,
     content clob
 );
@@ -60,7 +60,7 @@ create table Categories (
 -- Tags for articles
 -- e.g. "database", "sql", "mysql"
 create table Tags (
-    tagID char(36) primary key,
+    tagID integer primary key,
     tagName varchar(255),
 	catName varchar(255) references Categories
 );
@@ -68,15 +68,15 @@ create table Tags (
 -- Many to many relationship to show which tags are associated with which articles
 -- e.g. article "How to make a database" might have tags "database", "sql", "mysql
 create table ArticleTags (
-    articleID char(36) references Articles,
-    tagID char(36) references Tags
+    articleID integer references Articles,
+    tagID integer references Tags
 );
 
 -- Many to many relationship to show which users have viewed which articles,
 -- and at what times
 create table ArticleViews (
-    articleID char(36) references Articles,
-    userID char(36) references Users,
+    articleID integer references Articles,
+    userID integer references Users,
     viewedAt timestamp
 );
 
@@ -117,3 +117,18 @@ insert into Articles values (2, 'Quantum computing breakthrough', 'John Smith',
 insert into ArticleTags values (0, 0);
 insert into ArticleTags values (1, 2);
 insert into ArticleTags values (2, 1);
+
+insert into Comments values (0, 0, 0, to_date('2022-01-01', 'YYYY-MM-DD'), 'This is a great article');
+insert into Comments values (1, 0, 1, to_date('2022-01-01', 'YYYY-MM-DD'), 'I don''t agree with you');
+insert into Comments values (2, 0, 2, to_date('2022-01-01', 'YYYY-MM-DD'), 'I like your article');
+insert into Comments values (3, 1, 0, to_date('2022-01-01', 'YYYY-MM-DD'), 'This is a great article');
+insert into Comments values (4, 2, 1, to_date('2022-01-01', 'YYYY-MM-DD'), 'You dont understand quantum mechanics');
+insert into Comments values (5, 1, 2, to_date('2022-01-01', 'YYYY-MM-DD'), 'This could be disastrous for the country');
+
+insert into ArticleViews values (0, 0, to_timestamp('2022-01-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS'));
+insert into ArticleViews values (0, 0, to_timestamp('2022-01-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS'));
+insert into ArticleViews values (0, 2, to_timestamp('2022-01-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS'));
+insert into ArticleViews values (2, 2, to_timestamp('2022-01-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS'));
+insert into ArticleViews values (2, 1, to_timestamp('2022-01-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS'));
+insert into ArticleViews values (2, 2, to_timestamp('2022-01-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS'));
+
