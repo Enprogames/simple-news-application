@@ -15,15 +15,6 @@
 -- In ArticleTags, articleID references Articles and tagID references Tags
 -- In ArticleViews, articleID references Articles and userID references Users
 
--- drop table ArticleViews;
--- drop table ArticleTags;
--- drop table Tags;
--- drop table Categories;
--- drop table Comments;
--- drop table Articles;
--- drop table Users;
--- drop table UserRoles;
-
 -- For this project, this will likely consist soley of "user" and "admin". 
 -- The "admin" role will be able to view reports for what articles/tags/users/categories are most popular/active
 -- The "user" role will be able to view articles (with various sorting options), and comment on them.

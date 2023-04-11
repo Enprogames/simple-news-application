@@ -20,20 +20,30 @@ help:
 
 
 
-setup: requirements.txt create_data.sql
-	sqlplus posnerem@XE < create_data.sql
+setup: requirements.txt
 	cp .env.example .env
 	python3 -m venv $(venvDIR) --prompt $(projectName)
 	$(venvDIR)/bin/pip install -r requirements.txt
 
+# This must be ran after the .env file is given the database credentials
+initdb: create_data.sql
+	$(venvDIR)/bin/python3 db_util.py --create
+
+dropdb: drop_tables.sql
+	$(venvDIR)/bin/python3 db_util.py --drop
+
 run:
 	$(venvDIR)/bin/python3 $(codeDIR)/main.py
 
+# run tests using pytest unit testing framework
+test:
+	$(venvDIR)/bin/pytest
+
 clean:
-	sqlplus posnerem@XE < drop_tables.sql
 	rm -rf $(venvDIR)
 	rm -rf __pycache__
 	rm -rf $(codeDIR)/__pycache__
-	rm .env
+	rm -f .env
+	rm -rf .pytest_cache
 
-.PHONY: help setup run clean
+.PHONY: help setup run clean initdb dropdb test
