@@ -1,3 +1,9 @@
+"""
+Driver for all application functionality.
+
+@author: Ethan Posner
+@date: 2023-04-10
+"""
 
 # Standard library imports
 import getpass
@@ -58,7 +64,6 @@ def get_line(prompt: str, hidden=False) -> str:
 class AppStates(Enum):
     LOGGED_OUT = auto()
     ARTICLE_LIST = auto()
-    VIEW_ARTICLE = auto()
     ADMIN_MENU = auto()
     ADMIN_YEAR_PROMPT = auto()
 
@@ -89,12 +94,21 @@ class ApplicationCLI:
         r4 (Generate report of most active users)
         """
         
+        user_menu = """
+        d (list articles by date)
+        c (list articles in category)
+        t (list articles with tag)
+        v (view article)
+        x (comment on article)
+        z (view comments on article)
+        """
+
         if self.current_state == AppStates.LOGGED_OUT:
             print(f"l (login)\n{global_help}\n")
         elif self.current_user and self.current_user.is_admin and self.current_state == AppStates.ADMIN_MENU:
-            print(f"{admin_help}\n{global_help}\n")
+            print(f"{admin_help} l (logout)\n{global_help}\n")
         elif self.current_state == AppStates.ARTICLE_LIST:
-            print(f"d (list articles by date) c (list articles in category) t (list articles by tag) l (logout)\n{global_help}\n")
+            print(f"{user_menu} l (logout)\n{global_help}\n")
         elif self.current_state == AppStates.VIEW_ARTICLE:
             pass  # TODO: add help for viewing an article
         else:
@@ -107,8 +121,8 @@ class ApplicationCLI:
                 password = get_line("Enter password", hidden=True)
 
                 if username and password:
-                    user_id = self.db_interface.users.validate(username, password)
-                    if user_id:
+                    user_id = str(self.db_interface.users.validate(username, password))
+                    if not user_id.isspace():
                         return user_id
                     else:
                         print("Invalid username or password")
@@ -178,12 +192,42 @@ class ApplicationCLI:
                 return
             elif arg == 'v':  # view an article
                 articleID = get_line("Enter ID of article to view: ")
-                # TODO: 
+                try:
+                    int(articleID)
+                    if not articleID.isspace():
+                        self.article_viewer.print_article(articleID)
+                except ValueError:
+                    empty_prompt("Invalid article ID")
+                except DatabaseError as e:
+                    empty_prompt("Error viewing article. Article may not exist.")
                 return
-
-        elif self.current_state == AppStates.VIEW_ARTICLE:
-            # TODO: Add comments for commenting on articles and going back to article list
-            pass
+            elif arg == 'x':  # comment on an article
+                articleID = get_line("Enter ID of article to comment on: ")
+                content = get_line("Enter comment: ")
+                try:
+                    if not articleID.isspace() and not content.isspace():
+                        self.db_interface.articles.add_comment(articleID, self.current_user.userID, content)
+                        empty_prompt("Comment successfully added")
+                    else:
+                        empty_prompt("Invalid input")
+                except ValueError as e:
+                    empty_prompt("invalid article ID")
+                except DatabaseError as e:
+                    empty_prompt("Error adding comment. Article may not exist.")
+                return
+            elif arg == 'z':  # view comments on an article
+                articleID = get_line("Enter ID of article to view comments on: ")
+                try:
+                    int(articleID)
+                    if not articleID.isspace():
+                        self.article_viewer.print_comments(articleID)
+                    else:
+                        empty_prompt("Invalid input")
+                except ValueError as e:
+                    empty_prompt("Enter an integer value for the article ID.")
+                except DatabaseError as e:
+                    empty_prompt("Article may not exist.")
+                return
 
         print("Invalid command")
 
@@ -194,8 +238,6 @@ class ApplicationCLI:
                     prompt = "Enter command l (login) | h (list commands) | q (quit)"
                 elif self.current_state == AppStates.ARTICLE_LIST:
                     prompt = "Enter command: h (list commands) q (quit)"
-                elif self.current_state == AppStates.VIEW_ARTICLE:
-                    pass
                 elif self.current_state == AppStates.ADMIN_MENU:
                     prompt = "Enter command: h (list commands) q (quit)"
                 else:

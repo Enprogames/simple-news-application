@@ -1,4 +1,9 @@
 """
+Main database functionality.
+
+@author: Ethan Posner
+@date: 2023-04-10
+
 Users(userID, username, password, registerDate)
 Articles(articleID, title, author, publishDate, content)
 Comments(commentID, articleID, userID, commentDate, content)
@@ -20,12 +25,14 @@ from typing import List
 import oracledb
 from oracledb.exceptions import DatabaseError
 
-from queries import ARTICLE_TAGS, ARTICLES_SORTED, ARTICLES_BY_CATEGORY, ARTICLES_BY_TAG
+from queries import (ADD_COMMENT, ADD_VIEW, ARTICLE_COMMENTS, ARTICLE_TAGS,
+                     ARTICLES_SORTED, ARTICLES_BY_CATEGORY,
+                     ARTICLES_BY_TAG, HIGHEST_COMMENT_ID, SINGLE_ARTICLE, VALIDATE_USER)
 
 
 class User:
-    def __init__(self, user_id, username, password, registerDate, roleName):
-        self.user_id = user_id
+    def __init__(self, userID, username, password, registerDate, roleName):
+        self.userID = userID
         self.username = username
         self.password = password
         self.registerDate = registerDate
@@ -79,19 +86,17 @@ class UserTable:
         Returns:
             str: The user's ID if the user exists, otherwise None
         """
-        sql = """SELECT COUNT(*), userID
-                 FROM users
-                 WHERE username = :username AND password = :password
-                 GROUP BY userID"""
 
         with self.conn.cursor() as cursor:
-            cursor.execute(sql, username=username, password=password)
+            cursor.execute(VALIDATE_USER, username=username, password=password)
             result = cursor.fetchone()
 
             if result and result[0] == 1:
                 return result[1]
-            else:
+            elif result and result[0] == 0:
                 return None
+            else:
+                raise DatabaseError("Unexpected result from validate_user")
 
 
 class Article:
@@ -112,6 +117,24 @@ class Article:
         """
         
     __repr__ = __str__
+    
+class Comment:
+    def __init__(self, commentID, articleID, userID, commentDate, content, username: str):
+        self.commentID = commentID
+        self.articleID = articleID
+        self.userID = userID
+        self.commentDate = commentDate
+        self.content = content
+        self.username = username
+
+    def __str__(self):
+        return f"""
+        User: {self.username}
+        Date: {self.commentDate}
+        Content: {self.content}
+        """
+
+    __repr__ = __str__
 
 
 class ArticleTable:
@@ -122,10 +145,8 @@ class ArticleTable:
         self.conn = conn
 
     def get(self, articleID):
-        sql = """SELECT articleID, title, author, publishDate, content
-                 FROM articles WHERE articleID = :articleID"""
         with self.conn.cursor() as cursor:
-            cursor.execute(sql, articleID=articleID)
+            cursor.execute(SINGLE_ARTICLE, articleID=articleID)
             row = cursor.fetchone()
             if row is None:
                 raise DatabaseError("Article not found")
@@ -173,9 +194,24 @@ class ArticleTable:
         with self.conn.cursor() as cursor:
             cursor.execute(ARTICLE_TAGS, articleID=articleID)
             return [row[0] for row in cursor.fetchall()]
-                
+        
+    def get_comments(self, articleID: int) -> List[Comment]:
+        with self.conn.cursor() as cursor:
+            cursor.execute(ARTICLE_COMMENTS, articleID=articleID)
+            return [Comment(*row) for row in cursor.fetchall()]
+
     def add_view(self, articleID: int, userID: int):
-        pass
+        with self.conn.cursor() as cursor:
+            cursor.execute(ADD_VIEW, articleID=articleID, userID=userID)
+            self.conn.commit()
+            
+    def add_comment(self, articleID: int, userID: int, content: str):
+        with self.conn.cursor() as cursor:
+            cursor.execute(HIGHEST_COMMENT_ID)
+            commentID = str(int(cursor.fetchone()[0]) + 1)
+
+            cursor.execute(ADD_COMMENT, commentID=commentID, articleID=articleID, userID=userID, content=content)
+            self.conn.commit()
 
 
 class NewsDB:

@@ -9,7 +9,7 @@ class ArticleViewer:
         self.db = db
         self.console = Console()
 
-    def view_article(self, article_id):
+    def print_article(self, article_id):
         article = self.db.articles.get(article_id)
         with self.console.pager():
             self.console.print(article.pretty_print())
@@ -19,5 +19,13 @@ class ArticleViewer:
         articles = self.db.articles.get_all(sort_by)
 
         with self.console.pager():
+            self.console.print(f"Articles sorted by {sort_by}:")
             for article in articles:
                 self.console.print(article)
+                
+    def print_comments(self, article_id):
+        comments = self.db.articles.get_comments(article_id)
+        with self.console.pager():
+            self.console.print(f"Comments for article {article_id}:")
+            for comment in comments:
+                self.console.print(comment)

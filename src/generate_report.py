@@ -1,3 +1,10 @@
+"""
+Generate reports of the most viewed articles, most popular tags, most popular categories, and most active users for a given year.
+
+@author: Ethan Posner
+@date: 2023-04-10
+"""
+
 import re
 import datetime as dt
 
@@ -6,7 +13,7 @@ from rich.table import Table
 from rich.console import Console
 
 from db import NewsDB, UserTable, User, ArticleTable, Article
-from queries import ARTICLE_VIEW_REPORT
+from queries import ARTICLE_VIEW_REPORT, CATEGORY_VIEW_REPORT, TAG_VIEW_REPORT, USER_ACTIVITY_REPORT
 
 
 class ReportGenerator:
@@ -49,13 +56,28 @@ class ReportGenerator:
             self.table_view(rows)
         
     def most_popular_tags(self, year):
-        # TODO: Implement this method
-        pass
+        with self.db.conn.cursor() as cursor:
+            cursor.execute(TAG_VIEW_REPORT, year=str(year).strip())
+            rows = cursor.fetchall()
+            if len(rows) == 0:
+                raise DatabaseError("No rows were returned")
+            # tabulate using rich
+            self.table_view(rows)
     
     def most_popular_categories(self, year):
-        # TODO: Implement this method
-        pass
+        with self.db.conn.cursor() as cursor:
+            cursor.execute(CATEGORY_VIEW_REPORT, year=str(year).strip())
+            rows = cursor.fetchall()
+            if len(rows) == 0:
+                raise DatabaseError("No rows were returned")
+            # tabulate using rich
+            self.table_view(rows)
     
     def most_active_users(self, year):
-        # TODO: Implement this method
-        pass
+        with self.db.conn.cursor() as cursor:
+            cursor.execute(USER_ACTIVITY_REPORT, year=str(year).strip())
+            rows = cursor.fetchall()
+            if len(rows) == 0:
+                raise DatabaseError("No rows were returned")
+            # tabulate using rich
+            self.table_view(rows)
