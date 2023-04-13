@@ -27,10 +27,10 @@ setup: requirements.txt
 
 # This must be ran after the .env file is given the database credentials
 initdb: create_data.sql
-	$(venvDIR)/bin/python3 db_util.py --create
+	$(venvDIR)/bin/python3 src/db_util.py --create
 
 dropdb: drop_tables.sql
-	$(venvDIR)/bin/python3 db_util.py --drop
+	$(venvDIR)/bin/python3 src/db_util.py --drop
 
 run:
 	$(venvDIR)/bin/python3 $(codeDIR)/main.py
