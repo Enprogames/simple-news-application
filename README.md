@@ -30,6 +30,3 @@ or
 
 ## Testing
 1. Run `make test` to run tests
-
-## Troubleshooting
-### 

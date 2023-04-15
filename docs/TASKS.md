@@ -13,7 +13,7 @@
 - [x] User can comment on articles
 
 - [x] Admin can login and be in a separate state
-- [ ] Admins can view reports
+- [x] Admins can view reports
     - [x] Article views
     - [x] Tag popularity
     - [x] Category popularity
@@ -31,8 +31,8 @@
 
 ## Documentation
 - [ ] Detailed instructions in README.md for teacher
-- [ ] Testing scenarios in report
-- [ ] Full report
+- [x] Testing scenarios in report
+- [x] Full report
 - [x] ER Diagram
 
 ## Quality of Life
