@@ -13,7 +13,7 @@ from rich.table import Table
 from rich.console import Console
 
 from db import NewsDB, UserTable, User, ArticleTable, Article
-from queries import ARTICLE_VIEW_REPORT, CATEGORY_VIEW_REPORT, TAG_VIEW_REPORT, USER_ACTIVITY_REPORT
+from queries import ARTICLE_VIEW_REPORT, CATEGORY_REPORT, CATEGORY_VIEW_REPORT, TAG_REPORT, TAG_VIEW_REPORT, USER_ACTIVITY_REPORT
 
 
 class ReportGenerator:
@@ -44,6 +44,8 @@ class ReportGenerator:
             table.add_row(*row)
 
         self.console.print(table)
+        
+    ######### ADMIN REPORTS #########
 
     def most_viewed_articles(self, year: str):
 
@@ -79,5 +81,34 @@ class ReportGenerator:
             rows = cursor.fetchall()
             if len(rows) == 0:
                 raise DatabaseError("No rows were returned")
+            # tabulate using rich
+            self.table_view(rows)
+            
+    ######### USER REPORTS #########
+    
+    def tag_details(self):
+        with self.db.conn.cursor() as cursor:
+            cursor.execute(TAG_REPORT)
+            rows = cursor.fetchall()
+            if len(rows) == 0:
+                raise DatabaseError("No rows were returned")
+
+        # print with pager and keep contents on screen after printing
+        self.table_view(rows)
+        with self.console.pager():
+            self.console.print(f"Summary of Article Tags:")
+            # tabulate using rich
+            self.table_view(rows)
+            
+    def category_details(self):
+        with self.db.conn.cursor() as cursor:
+            cursor.execute(CATEGORY_REPORT)
+            rows = cursor.fetchall()
+            if len(rows) == 0:
+                raise DatabaseError("No rows were returned")
+
+        self.table_view(rows)
+        with self.console.pager():
+            self.console.print(f"Summary of Article Categories:")
             # tabulate using rich
             self.table_view(rows)

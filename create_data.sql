@@ -23,7 +23,6 @@ create table UserRoles (
     description varchar(1500)
 );
 
--- TODO: Add support for user email addresses?
 create table Users (
     userID integer primary key,
     username varchar(255),
@@ -36,7 +35,7 @@ create table Users (
 create table Articles (
     articleID integer primary key,
     title varchar(255),
-    author char(255),
+    author varchar(255),
     publishDate date,
     content clob
 );
@@ -92,12 +91,16 @@ insert into Users values (1, 'rick', '123',
 insert into Users values (2, 'fred', '123',
                           to_date('2022-01-03', 'YYYY-MM-DD'), 'user');
 
-insert into Categories values ('technology', 'Articles about technology');
-insert into Categories values ('politics', 'Articles about politics');
+insert into Categories values ('technology', 'Technological breakthroughs, new products, etc');
+insert into Categories values ('politics', 'Leaders, elections, foreign policy, etc');
+insert into Categories values ('cooking', 'All things cooking and food: recipes, ingredients, etc');
 
 insert into Tags values (0, 'database', 'technology');
 insert into Tags values (1, 'quantum computing', 'technology');
 insert into Tags values (2, 'world leaders', 'politics');
+insert into Tags values (3, 'elections', 'politics');
+insert into Tags values (4, 'italian food', 'cooking');
+insert into Tags values (5, 'greek food', 'cooking');
 
 
 insert into Articles (articleID, title, author, publishDate, content)
@@ -131,4 +134,4 @@ insert into ArticleViews values (0, 2, to_timestamp('2022-01-01 12:00:00', 'YYYY
 insert into ArticleViews values (2, 2, to_timestamp('2022-01-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS'));
 insert into ArticleViews values (2, 1, to_timestamp('2022-01-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS'));
 insert into ArticleViews values (2, 2, to_timestamp('2022-01-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS'));
-
+insert into ArticleViews values (1, 2, to_timestamp('2022-01-01 12:00:00', 'YYYY-MM-DD HH24:MI:SS'));

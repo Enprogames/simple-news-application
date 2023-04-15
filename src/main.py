@@ -12,6 +12,7 @@ from pathlib import Path
 from datetime import datetime
 import argparse
 from enum import Enum, auto
+from typing import Union
 
 # Third party imports
 from dotenv import load_dotenv
@@ -81,26 +82,30 @@ class ApplicationCLI:
 
         # the currently logged in user
         self.current_user = None
+        self.running = True
 
     def print_help(self):
         global_help = "h (list commands) q (quit)"
-        
+
         admin_help = """
         LOGGED IN AS ADMIN. AVAILABLE COMMANDS:
-        
+
         r1 (Generate report of most viewed articles)
         r2 (Generate report of most popular article tags)
         r3 (Generate report of most popular article categories)
         r4 (Generate report of most active users)
         """
-        
+
         user_menu = """
         d (list articles by date)
         c (list articles in category)
         t (list articles with tag)
+        g (list all tags)
+        a (list all categories)
         v (view article)
         x (comment on article)
         z (view comments on article)
+        l (logout)
         """
 
         if self.current_state == AppStates.LOGGED_OUT:
@@ -108,22 +113,20 @@ class ApplicationCLI:
         elif self.current_user and self.current_user.is_admin and self.current_state == AppStates.ADMIN_MENU:
             print(f"{admin_help} l (logout)\n{global_help}\n")
         elif self.current_state == AppStates.ARTICLE_LIST:
-            print(f"{user_menu} l (logout)\n{global_help}\n")
-        elif self.current_state == AppStates.VIEW_ARTICLE:
-            pass  # TODO: add help for viewing an article
+            print(f"{user_menu}\n{global_help}\n")
         else:
             print(global_help)
 
-    def login_prompt(self, retries=3) -> str:
+    def login_prompt(self, retries=3) -> Union[int, None]:
         try:
             while retries > 0:
                 username = get_line("Enter username")
                 password = get_line("Enter password", hidden=True)
 
                 if username and password:
-                    user_id = str(self.db_interface.users.validate(username, password))
-                    if not user_id.isspace():
-                        return user_id
+                    user_id = self.db_interface.users.validate(username, password)
+                    if user_id is not None:
+                        return int(user_id)
                     else:
                         print("Invalid username or password")
                         retries -= 1
@@ -139,13 +142,14 @@ class ApplicationCLI:
             self.print_help()
             return
         elif arg == 'q':  # the user wants to quit
-            quit_program("You have decided to quit. Quitting...")
+            print("You have decided to quit. Quitting...")
+            self.running = False
             return
         elif arg == 'l':
             # the user wants to login
             if self.current_state == AppStates.LOGGED_OUT:
                 user_id = self.login_prompt()
-                if user_id:  # give the login prompt and login if it was successful
+                if user_id is not None:  # give the login prompt and login if it was successful
                     ### THE USER IS LOGGED IN HERE ###
                     self.current_user = self.db_interface.users.get(user_id)
                     empty_prompt(f"Successfully logged in as {self.current_user.username}")
@@ -156,7 +160,7 @@ class ApplicationCLI:
                 return
 
             # User wants to logout
-            elif self.current_state == AppStates.ADMIN_MENU or self.current_state == AppStates.VIEW_ARTICLE or self.current_state == AppStates.ARTICLE_LIST:
+            elif self.current_state == AppStates.ADMIN_MENU or self.current_state == AppStates.ARTICLE_LIST:
                 self.current_user = None
                 self.current_state = AppStates.LOGGED_OUT
                 print("Successfully logged out")
@@ -165,19 +169,31 @@ class ApplicationCLI:
         elif self.current_state == AppStates.ADMIN_MENU:
             if arg == 'r1':
                 year = get_line("Enter year: ")
-                self.report_generator.most_viewed_articles(year)
+                if year and year.isnumeric():
+                    self.report_generator.most_viewed_articles(year)
+                else:
+                    empty_prompt("year invalid")
                 return
             elif arg == 'r2':
                 year = get_line("Enter year: ")
-                self.report_generator.most_popular_tags(year)
+                if year and year.isnumeric():
+                    self.report_generator.most_popular_tags(year)
+                else:
+                    empty_prompt("year invalid")
                 return
             elif arg == 'r3':
                 year = get_line("Enter year: ")
-                self.report_generator.most_popular_categories(year)
+                if year and year.isnumeric():
+                    self.report_generator.most_popular_categories(year)
+                else:
+                    empty_prompt("year invalid")
                 return
             elif arg == 'r4':
                 year = get_line("Enter year: ")
-                self.report_generator.most_active_users(year)
+                if year and year.isnumeric():
+                    self.report_generator.most_active_users(year)
+                else:
+                    empty_prompt("year invalid")
                 return
 
         elif self.current_state == AppStates.ARTICLE_LIST:
@@ -185,27 +201,44 @@ class ApplicationCLI:
                 self.article_viewer.print_articles(sort_by='date')
                 return
             elif arg == 'c':  # list articles in a given category
-                # TODO: 
+                catName = get_line("Enter name of category: ")
+                if catName and self.db_interface.categories.exists(catName):
+                    self.article_viewer.print_articles(catName=catName)
+                else:
+                    empty_prompt(f"category '{catName}' does not exist")
                 return
             elif arg == 't':  # list articles with a given tag
-                # TODO: 
+                tagID = get_line("Enter ID of tag: ")
+                if tagID and tagID.isdigit() and self.db_interface.tags.exists(tagID):
+                    self.article_viewer.print_articles(tagID=tagID)
+                elif not tagID or not tagID.isdigit():
+                    empty_prompt("Invalid tag ID")
+                else:
+                    empty_prompt(f"Tag with ID '{tagID}' does not exist")
+                return
+            elif arg == 'g':  # list all tags
+                self.report_generator.tag_details()
+                return
+            elif arg == 'a':  # list all categories
+                self.report_generator.category_details()
                 return
             elif arg == 'v':  # view an article
                 articleID = get_line("Enter ID of article to view: ")
                 try:
-                    int(articleID)
-                    if not articleID.isspace():
+                    if articleID is not None and articleID.isnumeric():
+                        articleID = int(articleID)
                         self.article_viewer.print_article(articleID)
-                except ValueError:
-                    empty_prompt("Invalid article ID")
+                        self.db_interface.articles.add_view(articleID, self.current_user.userID)
+                    else:
+                        empty_prompt(f"Invalid article ID: '{articleID}'")
                 except DatabaseError as e:
-                    empty_prompt("Error viewing article. Article may not exist.")
+                    empty_prompt(f"Error viewing article: {str(e)}")
                 return
             elif arg == 'x':  # comment on an article
                 articleID = get_line("Enter ID of article to comment on: ")
                 content = get_line("Enter comment: ")
                 try:
-                    if not articleID.isspace() and not content.isspace():
+                    if articleID and content and not articleID.isspace() and not content.isspace():
                         self.db_interface.articles.add_comment(articleID, self.current_user.userID, content)
                         empty_prompt("Comment successfully added")
                     else:
@@ -233,7 +266,7 @@ class ApplicationCLI:
 
     def prompt_loop(self):
         try:
-            while True:
+            while self.running:
                 if self.current_state == AppStates.LOGGED_OUT:
                     prompt = "Enter command l (login) | h (list commands) | q (quit)"
                 elif self.current_state == AppStates.ARTICLE_LIST:
@@ -251,21 +284,23 @@ class ApplicationCLI:
                     print("Command cannot be empty")
 
         except KeyboardInterrupt:
-            quit_program("Got keyboard interrupt. Quitting...")
+            print("Got keyboard interrupt. Quitting...")
+            self.running = False
 
 
-# Connect to oracle database
-load_dotenv()  # load environment from .env file
-DEBUG_MODE = os.getenv('DEBUG_MODE', 'False').lower() == 'true'
-oracledb.init_oracle_client()
-with oracledb.connect(user=os.getenv('DB_USER'),
-                      password=os.getenv('DB_PASS'),
-                      port=os.getenv('DB_PORT'),
-                      host=os.getenv('DB_HOST'),
-                      service_name='XE') as db_conn:
-    print("Successfully connected to Oracle Database")
-    
-    db_interface = NewsDB(db_conn)
-    app = ApplicationCLI(db_interface)
+if __name__ == '__main__':
+    # Connect to oracle database
+    load_dotenv()  # load environment from .env file
+    DEBUG_MODE = os.getenv('DEBUG_MODE', 'False').lower() == 'true'
+    oracledb.init_oracle_client()
+    with oracledb.connect(user=os.getenv('DB_USER'),
+                        password=os.getenv('DB_PASS'),
+                        port=os.getenv('DB_PORT'),
+                        host=os.getenv('DB_HOST'),
+                        service_name='XE') as db_conn:
+        print("Successfully connected to Oracle Database")
+        
+        db_interface = NewsDB(db_conn)
+        app = ApplicationCLI(db_interface)
 
-    app.prompt_loop()
+        app.prompt_loop()

@@ -14,15 +14,29 @@ class ArticleViewer:
         with self.console.pager():
             self.console.print(article.pretty_print())
 
-    def print_articles(self, sort_by='date'):
+    def print_articles(self, sort_by='date', catName=None, tagID=None):
         assert sort_by in self.db.articles.sort_options
-        articles = self.db.articles.get_all(sort_by)
+        info = ""
+        if catName is not None and tagID is not None:
+            raise ValueError("Feature not yet implemented")
+        elif catName is not None:
+            articles = self.db.articles.get_by_category(catName)
+            info = f" in category '{catName}'"
+        elif tagID is not None:
+            tag = self.db.tags.get(tagID)
+            articles = self.db.articles.get_by_tag(tagID)
+            info = f" with tag '{tag.tagName}'"
+        else:
+            articles = self.db.articles.get_all(sort_by)
 
-        with self.console.pager():
-            self.console.print(f"Articles sorted by {sort_by}:")
-            for article in articles:
-                self.console.print(article)
-                
+        if len(articles) > 0:
+            with self.console.pager():
+                self.console.print(f"Got {len(articles)} Article(s){info} (sorted By {sort_by}):")
+                for article in articles:
+                    self.console.print(article)
+        else:
+            self.console.print(f"No Articles Found{info}")
+
     def print_comments(self, article_id):
         comments = self.db.articles.get_comments(article_id)
         with self.console.pager():

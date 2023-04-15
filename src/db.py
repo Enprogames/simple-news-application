@@ -20,14 +20,14 @@ here
 """
 
 
-from typing import List
+from typing import List, Union
 
 import oracledb
 from oracledb.exceptions import DatabaseError
 
 from queries import (ADD_COMMENT, ADD_VIEW, ARTICLE_COMMENTS, ARTICLE_TAGS,
                      ARTICLES_SORTED, ARTICLES_BY_CATEGORY,
-                     ARTICLES_BY_TAG, HIGHEST_COMMENT_ID, SINGLE_ARTICLE, VALIDATE_USER)
+                     ARTICLES_BY_TAG, CATEGORY_EXISTS, CHECK_USER_EXISTS, CREATE_USER, DELETE_USER, GET_USER, HIGHEST_COMMENT_ID, SINGLE_ARTICLE, SINGLE_CATEGORY, SINGLE_TAG, TAG_EXISTS, VALIDATE_USER)
 
 
 class User:
@@ -37,46 +37,76 @@ class User:
         self.password = password
         self.registerDate = registerDate
         self.roleName = roleName
-        
+
     @property
     def is_admin(self):
         return self.roleName == 'admin'
 
 
 class UserTable:
+    """A class for interacting with the Users table in the database.
+    """
     def __init__(self, conn):
+        """Initialize a new UserTable object.
+
+        Args:
+            conn (oracledb.connection.Connection): The connection to the oracle database.
+        """
         self.conn: oracledb.connection.Connection = conn
 
     def create(self, user: User):
-        sql = "INSERT INTO users (username, password, registerDate) VALUES (:username, :password, :registerDate)"
+        """Create a new user in the database.
+
+        Args:
+            user (User): The user to create.
+        """
         with self.conn.cursor() as cursor:
-            cursor.execute(sql, username=user.username, password=user.password, registerDate=user.registerDate)
+            cursor.execute(CREATE_USER, username=user.username, password=user.password, registerDate=user.registerDate)
         self.conn.commit()
 
-    def delete(self, userID):
-        sql = "DELETE FROM users WHERE userID = :userID"
+    def delete(self, userID: int):
+        """Delete a user from the database.
+
+        Args:
+            userID (int): The ID of the user to delete.
+        """
         with self.conn.cursor() as cursor:
-            cursor.execute(sql, userID=userID)
+            cursor.execute(DELETE_USER, userID=userID)
         self.conn.commit()
 
-    def exists(self, userID):
-        sql = "SELECT COUNT(*) FROM users WHERE userID = :userID"
+    def exists(self, userID: int) -> bool:
+        """Check if a user exists in the database.
+
+        Args:
+            userID (int): The ID of the user to check.
+
+        Returns:
+            bool: True if the user exists, otherwise False.
+        """
         with self.conn.cursor() as cursor:
-            cursor.execute(sql, userID=userID)
+            cursor.execute(CHECK_USER_EXISTS, userID=userID)
             return cursor.fetchone()[0] > 0
 
-    def get(self, userID):
-        sql = """SELECT userID, username, password, registerDate, roleName
-                 FROM users
-                 WHERE userID = :userID"""
+    def get(self, userID: int):
+        """Get a user from the database.
+
+        Args:
+            userID (int): The ID of the user to get.
+
+        Raises:
+            DatabaseError: If the user does not exist.
+
+        Returns:
+            User: Object for user with the given ID.
+        """
         with self.conn.cursor() as cursor:
-            cursor.execute(sql, userID=userID)
+            cursor.execute(GET_USER, userID=userID)
             row = cursor.fetchone()
             if row is None:
                 raise DatabaseError("User not found")
             return User(*row)
 
-    def validate(self, username: str, password: str) -> str:
+    def validate(self, username: str, password: str) -> Union[int, None]:
         """
         Give a username and password, return the user's ID if the user exists. Otherwise return None.
         
@@ -93,10 +123,12 @@ class UserTable:
 
             if result and result[0] == 1:
                 return result[1]
-            elif result and result[0] == 0:
+            elif result is None or (result and result[0] == 0):
                 return None
-            else:
-                raise DatabaseError("Unexpected result from validate_user")
+            elif result is not None:
+                raise DatabaseError(f"Unexpected result from validate_user. There should only be one row returned. Got {result[0]} instead.")
+
+            raise DatabaseError("Unexpected result from validate_user. There should only be one row returned.")
 
 
 class Article:
@@ -107,13 +139,23 @@ class Article:
         self.publishDate = publishDate
         self.content = content
         self.tags = tags
-        
+
     def __str__(self):
         return f"""
         Article {self.articleID}
         Title: {self.title}
         Date: {self.publishDate}
         Tags: {self.tags}
+        """
+    
+    def pretty_print(self):
+        return f"""
+        Article {self.articleID}
+        Title: {self.title}
+        Date: {self.publishDate}
+        Tags: {self.tags}
+
+        {self.content}
         """
         
     __repr__ = __str__
@@ -150,7 +192,10 @@ class ArticleTable:
             row = cursor.fetchone()
             if row is None:
                 raise DatabaseError("Article not found")
-            return Article(row.articleID, row.title, row.author, row.publishDate, row.content)
+            articleID = row[0]
+            cursor.execute(ARTICLE_TAGS, articleID=articleID)
+            tags = [row[0] for row in cursor.fetchall()]
+            return Article(*row, tags=tags)
 
     def get_all(self, sort_by='date') -> List[Article]:
         assert sort_by in self.sort_options
@@ -175,12 +220,45 @@ class ArticleTable:
                 
         return articles
     
-    def get_from_category(self, category: str) -> List[Article]:
+    def get_by_category(self, catName: str, sort_by='date') -> List[Article]:
         
+        assert sort_by in self.sort_options
+
         articles = []
+
+        if sort_by == 'date':
+            sort_by = 'publishDate'
+        elif sort_by == 'title':
+            sort_by = 'title'
+        elif sort_by == 'author':
+            sort_by = 'author'
         
         with self.conn.cursor() as cursor:
-            cursor.execute(ARTICLES_BY_CATEGORY, catName=category)
+            cursor.execute(ARTICLES_BY_CATEGORY, catName=catName, sort_by=sort_by)
+            rows = cursor.fetchall()
+            for row in rows:
+                articleID = row[0]
+                cursor.execute(ARTICLE_TAGS, articleID=articleID)
+                tags = [row[0] for row in cursor.fetchall()]
+                articles.append(Article(*row, tags=tags))
+
+        return articles
+    
+    def get_by_tag(self, tagID: int, sort_by='date') -> List[Article]:
+
+        assert sort_by in self.sort_options
+
+        articles = []
+
+        if sort_by == 'date':
+            sort_by = 'publishDate'
+        elif sort_by == 'title':
+            sort_by = 'title'
+        elif sort_by == 'author':
+            sort_by = 'author'
+        
+        with self.conn.cursor() as cursor:
+            cursor.execute(ARTICLES_BY_TAG, tagID=tagID, sort_by=sort_by)
             rows = cursor.fetchall()
             for row in rows:
                 articleID = row[0]
@@ -208,10 +286,77 @@ class ArticleTable:
     def add_comment(self, articleID: int, userID: int, content: str):
         with self.conn.cursor() as cursor:
             cursor.execute(HIGHEST_COMMENT_ID)
-            commentID = str(int(cursor.fetchone()[0]) + 1)
+            commentID = int(cursor.fetchone()[0]) + 1
 
             cursor.execute(ADD_COMMENT, commentID=commentID, articleID=articleID, userID=userID, content=content)
             self.conn.commit()
+
+
+class TagTable:
+
+    def __init__(self, conn):
+        self.conn = conn
+        
+    def exists(self, tagID: int) -> bool:
+        with self.conn.cursor() as cursor:
+            cursor.execute(TAG_EXISTS, tagID=tagID)
+            return cursor.fetchone()[0] == 1
+
+    def get(self, tagID: int):
+        with self.conn.cursor() as cursor:
+            cursor.execute(SINGLE_TAG, tagID=tagID)
+            row = cursor.fetchone()
+            if row is None:
+                raise DatabaseError("Tag not found")
+            return Tag(*row)
+
+
+class Tag:
+    def __init__(self, tagID, tagName, catName):
+        self.tagID = tagID
+        self.tagName = tagName
+        self.catName = catName
+
+    def __str__(self):
+        return f"""
+        Tag {self.tagID}
+        Name: {self.tagName}
+        """
+
+    __repr__ = __str__
+    
+
+class CategoryTable:
+
+    def __init__(self, conn):
+        self.conn = conn
+        
+    def exists(self, catName: str) -> bool:
+        with self.conn.cursor() as cursor:
+            cursor.execute(CATEGORY_EXISTS, catName=catName)
+            return cursor.fetchone()[0] == 1
+
+    def get(self, catName: str):
+        with self.conn.cursor() as cursor:
+            cursor.execute(SINGLE_CATEGORY, catName=catName)
+            row = cursor.fetchone()
+            if row is None:
+                raise DatabaseError("Category not found")
+            return Tag(*row)
+
+
+class Category:
+    def __init__(self, catName, description):
+        self.catName = catName
+        self.description = description
+
+    def __str__(self):
+        return f"""
+        Category: {self.catName}
+        Description: {self.description}
+        """
+
+    __repr__ = __str__
 
 
 class NewsDB:
@@ -219,3 +364,5 @@ class NewsDB:
         self.conn: oracledb.connection.Connection = conn
         self.users = UserTable(self.conn)
         self.articles = ArticleTable(self.conn)
+        self.tags = TagTable(self.conn)
+        self.categories = CategoryTable(self.conn)
