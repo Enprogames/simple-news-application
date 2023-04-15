@@ -1,7 +1,7 @@
 # CSCI 370 Project Report
-Name: Ethan Posner (658-180-559)
-Date: April 4, 2023
-Course: CSCI 370
+- Name: Ethan Posner (658-180-559)
+- Date: April 4, 2023
+- Course: CSCI 370
 
 ## Introduction
 
