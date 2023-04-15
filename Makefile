@@ -15,6 +15,12 @@ help:
 	@echo "    Setup database, create environment file, and create Python virtual environment."
 	@echo "make run"
 	@echo "    Run the program."
+	@echo "make initdb"
+	@echo "    Initialize the database."
+	@echo "make dropdb"
+	@echo "    Delete all database tables."
+	@echo "make test"
+	@echo "    Run unit tests."
 	@echo "make clean"
 	@echo "    Remove the virtual environment and other junk."
 
