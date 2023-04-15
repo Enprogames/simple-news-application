@@ -296,6 +296,10 @@ if __name__ == '__main__':
     # Connect to oracle database
     load_dotenv()  # load environment from .env file
     DEBUG_MODE = os.getenv('DEBUG_MODE', 'False').lower() == 'true'
+    assert os.getenv('DB_USER'), "DB_USER cannot be empty. Ensure it is set in the .env file"
+    assert os.getenv('DB_PASS'), "DB_PASS cannot be empty. Ensure it is set in the .env file"
+    assert os.getenv('DB_PORT'), "DB_PORT cannot be empty. Ensure it is set in the .env file"
+    assert os.getenv('DB_HOST'), "DB_HOST cannot be empty. Ensure it is set in the .env file"
     oracledb.init_oracle_client()
     with oracledb.connect(user=os.getenv('DB_USER'),
                         password=os.getenv('DB_PASS'),
