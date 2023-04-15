@@ -25,11 +25,6 @@ from article_view import ArticleViewer
 from generate_report import ReportGenerator
 
 
-def quit_program(msg: str = "Bye", code: int = 0):
-    print(msg)
-    exit(code)
-
-
 def empty_prompt(prompt: str) -> None:
     """Prints prompt and waits for user to press enter
 
@@ -83,6 +78,15 @@ class ApplicationCLI:
         # the currently logged in user
         self.current_user = None
         self.running = True
+        
+        try:
+            self.db_interface.verify()
+        except DatabaseError as e:
+            print(f"*****Database error: {e}")
+            print("*****The database was not properly initialized. Ensure that you ran `make initdb` or the `create_data.sql` script before running.")
+            print("If you just ran the unit tests, the database will have been deleted.")
+            print("*****Quitting...")
+            self.running = False
 
     def print_help(self):
         global_help = "h (list commands) q (quit)"

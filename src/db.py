@@ -27,7 +27,7 @@ from oracledb.exceptions import DatabaseError
 
 from queries import (ADD_COMMENT, ADD_VIEW, ARTICLE_COMMENTS, ARTICLE_TAGS,
                      ARTICLES_SORTED, ARTICLES_BY_CATEGORY,
-                     ARTICLES_BY_TAG, CATEGORY_EXISTS, CHECK_USER_EXISTS, CREATE_USER, DELETE_USER, GET_USER, HIGHEST_COMMENT_ID, SINGLE_ARTICLE, SINGLE_CATEGORY, SINGLE_TAG, TAG_EXISTS, VALIDATE_USER)
+                     ARTICLES_BY_TAG, CATEGORY_EXISTS, CHECK_USER_EXISTS, CREATE_USER, DELETE_USER, GET_USER, HIGHEST_COMMENT_ID, SINGLE_ARTICLE, SINGLE_CATEGORY, SINGLE_TAG, TAG_EXISTS, VALIDATE_USER, VERIFY_DB)
 
 
 class User:
@@ -366,3 +366,9 @@ class NewsDB:
         self.articles = ArticleTable(self.conn)
         self.tags = TagTable(self.conn)
         self.categories = CategoryTable(self.conn)
+
+    def verify(self):
+        """Verify that the database is set up correctly. All tables should have been initialized.
+        """
+        with self.conn.cursor() as cursor:
+            cursor.execute(VERIFY_DB)

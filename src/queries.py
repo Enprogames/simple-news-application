@@ -5,6 +5,22 @@ Home for SQL scripts that will be used by various modules in this project.
 @date: 2023-04-10
 """
 
+VERIFY_DB = """SELECT COUNT(*) FROM UserRoles WHERE roleName = 'None'
+               UNION ALL
+               SELECT COUNT(*) FROM Users WHERE userID = 0
+               UNION ALL
+               SELECT COUNT(*) FROM articles WHERE articleID = 0
+               UNION ALL
+               SELECT COUNT(*) FROM Comments WHERE commentID = 0
+               UNION ALL
+               SELECT COUNT(*) FROM Categories WHERE catName = 'None'
+               UNION ALL
+               SELECT COUNT(*) FROM Tags WHERE tagID = 0
+               UNION ALL
+               SELECT COUNT(*) FROM ArticleTags WHERE articleID = 0
+               UNION ALL
+               SELECT COUNT(*) FROM ArticleViews WHERE articleID = 0"""
+
 # Used for getting the most recent comment for when we create a new one.
 # I used this instead of a trigger due to time constraints.
 HIGHEST_COMMENT_ID = """SELECT MAX(commentID) FROM Comments"""
