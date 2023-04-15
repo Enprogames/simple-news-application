@@ -25,8 +25,10 @@ from db_util import create_data, drop_data
 
 
 class TestInterface:
+    """Test the NewsDB class, which is the main interface to the database."""
     @classmethod
     def setup_class(cls):
+        """Fully initialize the database from scratch. Create a NewsDB instance and connect to the database."""
         # Connect to oracle database
         load_dotenv()  # load environment from .env file
         oracledb.init_oracle_client()
@@ -43,6 +45,7 @@ class TestInterface:
 
     @classmethod
     def teardown_class(cls):
+        """Close the database connection and drop all data."""
         drop_data(cls.db_interface.conn, output=False)
         cls.db_interface.conn.close()
         print("Successfully closed connection to Oracle Database")
@@ -56,8 +59,10 @@ class TestInterface:
 
 
 class TestUser:
+    """Test the UserTable class."""
     @classmethod
     def setup_class(cls):
+        """Fully initialize the database from scratch. Create a NewsDB instance and connect to the database."""
         # Connect to oracle database
         load_dotenv()  # load environment from .env file
         oracledb.init_oracle_client()
@@ -74,6 +79,7 @@ class TestUser:
 
     @classmethod
     def teardown_class(cls):
+        """Close the database connection and drop all data."""
         drop_data(cls.db_interface.conn, output=False)
         cls.db_interface.conn.close()
         print("Successfully closed connection to Oracle Database")
@@ -119,9 +125,11 @@ class TestUser:
 
 
 class TestArticle:
+    """Test the ArticleTable class."""
 
     @classmethod
     def setup_class(cls):
+        """Fully initialize the database from scratch. Create a NewsDB instance and connect to the database."""
         # Connect to oracle database
         load_dotenv()  # load environment from .env file
         oracledb.init_oracle_client()
@@ -138,6 +146,7 @@ class TestArticle:
 
     @classmethod
     def teardown_class(cls):
+        """Close the database connection and drop all data."""
         drop_data(cls.db_interface.conn, output=False)
         cls.db_interface.conn.close()
         print("Successfully closed connection to Oracle Database")
@@ -191,3 +200,13 @@ class TestArticle:
     
     def test_add_view(self):
         pass
+    
+
+class TestTag:
+    """Test the TagTable class."""
+    pass
+
+
+class TestCategory:
+    """Test the CategoryTable class."""
+    pass

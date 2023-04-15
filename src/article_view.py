@@ -1,6 +1,13 @@
+"""
+Helper module for presenting articles to the user in a nice format.
+
+@author: Ethan Posner
+@date: 2023-04-10
+"""
+
 from rich.console import Console
 
-from db import NewsDB, UserTable, User, ArticleTable, Article
+from db import NewsDB
 
 
 class ArticleViewer:

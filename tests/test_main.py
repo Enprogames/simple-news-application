@@ -6,7 +6,8 @@ Tests for main application driver.
 """
 
 # Standard library imports
-from io import StringIO
+from unittest.mock import patch
+import builtins
 import os
 import sys
 from unittest.mock import patch
@@ -52,20 +53,39 @@ class TestMain:
         print("Successfully closed connection to Oracle Database")
 
     def test_init(self, monkeypatch):
+        """Test that the application initializes correctly. The quit command is fed in to stop the application."""
 
         with monkeypatch.context() as m:
             m.setattr('builtins.input', lambda prompt: 'q')
             app = ApplicationCLI(self.db_interface)
             assert app.current_user is None
             assert app.current_state == AppStates.LOGGED_OUT
+            app.prompt_loop()
     
     def test_login(self, monkeypatch):
+        """Test that the user can login successfully."""
         # Define a generator function that yields a sequence of values
         input_vals = iter(['l', 'bob', '123', 'q'])
 
         with monkeypatch.context() as m:
             m.setattr('main.get_line', lambda prompt, *a, **kw: next(input_vals))
             m.setattr('builtins.input', lambda prompt: '')
+            app = ApplicationCLI(self.db_interface)
+            assert app.current_user is None
+            assert app.current_state == AppStates.LOGGED_OUT
+            app.prompt_loop()
+            
+    @pytest.mark.skip("Skipping until I can figure out how to cause a mock keyboard interrupt")
+    def test_login_fail(self, monkeypatch):
+        """Ensure that the user cannot login with an incorrect password."""
+        # Define a generator function that yields a sequence of values. Give incorrect password, then control C to exit login prompt.
+        control_c = '\x03'
+        
+        input_vals = iter(['l', 'bob', '1234', control_c, 'q'])
+
+        with monkeypatch.context() as m:
+            m.setattr('builtins.input', lambda prompt: '')
+            m.setattr('main.get_line', lambda prompt, *a, **kw: next(input_vals))
             app = ApplicationCLI(self.db_interface)
             assert app.current_user is None
             assert app.current_state == AppStates.LOGGED_OUT
