@@ -83,7 +83,7 @@ class ApplicationCLI:
             self.db_interface.verify()
         except DatabaseError as e:
             print(f"*****Database error: {e}")
-            print("*****The database was not properly initialized. Ensure that you ran `make initdb` or the `create_data.sql` script before running.")
+            print("*****The database was not properly initialized. Ensure that you ran `make initdb` or the `create_data.txt` script before running.")
             print("If you just ran the unit tests, the database will have been deleted.")
             print("*****Quitting...")
             self.running = False

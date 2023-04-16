@@ -32,10 +32,10 @@ setup: requirements.txt
 	$(venvDIR)/bin/pip install -r requirements.txt
 
 # This must be ran after the .env file is given the database credentials
-initdb: create_data.sql
+initdb: create_data.txt
 	$(venvDIR)/bin/python3 src/db_util.py --create
 
-dropdb: drop_tables.sql
+dropdb: drop_tables.txt
 	$(venvDIR)/bin/python3 src/db_util.py --drop
 
 run:

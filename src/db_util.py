@@ -44,21 +44,21 @@ def execute_script(script_name: str, cursor: 'Cursor', output=True) -> str:
 
 def create_data(db_conn: 'Connection', output=True) -> None:
     with db_conn.cursor() as cursor:
-        execute_script('create_data.sql', cursor, output=output)
+        execute_script('create_data.txt', cursor, output=output)
     db_conn.commit()
 
 
 def drop_data(db_conn: 'Connection', output=True) -> None:
     with db_conn.cursor() as cursor:
-        execute_script('drop_tables.sql', cursor, output=output)
+        execute_script('drop_tables.txt', cursor, output=output)
     db_conn.commit()
 
 
 if __name__ == '__main__':
 
-    parser = argparse.ArgumentParser(description='Run create_data.sql or drop_tables.sql script.')
-    parser.add_argument('--create', help='Run create_data.sql script.', action='store_true')
-    parser.add_argument('--drop', help='Run drop_tables.sql script.', action='store_true')
+    parser = argparse.ArgumentParser(description='Run create_data.txt or drop_tables.txt script.')
+    parser.add_argument('--create', help='Run create_data.txt script.', action='store_true')
+    parser.add_argument('--drop', help='Run drop_tables.txt script.', action='store_true')
     args = parser.parse_args()
 
 

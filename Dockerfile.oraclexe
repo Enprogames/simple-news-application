@@ -7,4 +7,4 @@ RUN apt-get update && apt-get install -y rlwrap tree
 RUN alias rlsqlplus='rlwrap sqlplus'
 RUN alias rlrman='rlwrap rman'
 
-COPY ./create_data.sql /entrypoint-initdb.d/
+COPY ./create_data.txt /entrypoint-initdb.d/
